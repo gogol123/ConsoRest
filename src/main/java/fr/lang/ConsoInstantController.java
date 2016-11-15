@@ -5,9 +5,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.thetransactioncompany.jsonrpc2.client.*;
 import com.thetransactioncompany.jsonrpc2.*;
-import net.minidev.json.*;
 import java.net.*;
 
+import net.minidev.json.*;
 
 
 import java.util.*;
@@ -17,27 +17,51 @@ import java.util.*;
  */
 @RestController
 public class ConsoInstantController {
-    @RequestMapping("/instantane")
-    public int GetConsoInstantane(){
 
-        // The remote method to call
-        String method = "makePayment";
+    private static String apikey = "1d5f3d24d9a9e286cc70123ee86e1e3e779f3e7c";
+    private static String puissanceInstantaneeId = "334";
+    private static String ConsoHistoriqueId = "354";
 
-        // The required named parameters to pass
+    private JSONObject callRpc(String methode,String cmdId){
+        URL serverURL = null;
+
+        try {
+            serverURL = new URL("http://jeedom.maison.local/core/api/jeeApi.php");
+
+        } catch (MalformedURLException e) {
+            // handle exception...
+        }
         Map<String,Object> params = new HashMap<String,Object>();
-        params.put("recipient", "Penny Adams");
-        params.put("amount", 175.05);
+        params.put("apikey", apikey);
+        params.put("id",cmdId);
 
-        // The mandatory request ID
         String id = "req-001";
 
-        // Create a new JSON-RPC 2.0 request
-        JSONRPC2Request reqOut = new JSONRPC2Request(method, params, id);
 
-        // Serialise the request to a JSON-encoded string
-        String jsonString = reqOut.toString();
+        JSONRPC2Session mySession = new JSONRPC2Session(serverURL);
+        mySession.getOptions().setAllowedResponseContentTypes(new String[]{"text/html"});
 
-        // jsonString can now be dispatched to the server...
-        return 600;
+        JSONRPC2Request request = new JSONRPC2Request("cmd::byId",params, id);
+        JSONRPC2Response response = null;
+
+        try {
+            response = mySession.send(request);
+
+        } catch (JSONRPC2SessionException e) {
+
+            System.err.println(e.getMessage());
+        }
+       return (JSONObject)response.getResult();
+
+    }
+
+    @RequestMapping("/instantane")
+    public Object GetConsoInstantane(){
+        return callRpc("cmd::byId",puissanceInstantaneeId).get("currentValue");
+    }
+
+    @RequestMapping("/historique")
+    public JSONObject GetConsoHistorique(){
+        return callRpc("cmd::getStatistique",ConsoHistoriqueId);
     }
 }
